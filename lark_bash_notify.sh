@@ -56,13 +56,34 @@ EOF
 
 # Function to wrap script execution with notifications
 lark_monitor() {
-    local webhook_url="$1"
-    local task_name="${2:-Default}"
-    local script_command="${@:3}"
+    local webhook_url=""
+    local task_name=""
+    local script_command=""
+    
+    # Smart parameter parsing - check if first argument looks like a URL
+    if [[ $# -ge 3 && "$1" =~ ^https?:// ]]; then
+        # Format: webhook_url task_name command...
+        webhook_url="$1"
+        task_name="$2"
+        script_command="${@:3}"
+    elif [[ $# -ge 2 ]]; then
+        # Format: task_name command... (use LARK_HOOK)
+        webhook_url=""
+        task_name="$1"
+        script_command="${@:2}"
+    else
+        echo "Usage: lark_monitor [webhook_url] [task_name] [command...]"
+        echo "       lark_monitor [task_name] [command...]  (uses LARK_HOOK environment variable)"
+        echo "Example: lark_monitor 'https://...' 'Data Processing' './my_script.sh'"
+        echo "         lark_monitor 'Data Processing' './my_script.sh'  (with LARK_HOOK set)"
+        return 1
+    fi
+    
+    # Set default task name if empty
+    task_name="${task_name:-Default}"
     
     if [[ -z "$script_command" ]]; then
-        echo "Usage: lark_monitor [webhook_url] [task_name] [command...]"
-        echo "Example: lark_monitor 'https://...' 'Data Processing' './my_script.sh'"
+        echo "Error: No command specified to monitor"
         return 1
     fi
     
@@ -168,6 +189,7 @@ case "${1:-help}" in
         echo ""
         echo "Usage:"
         echo "  $0 monitor [webhook_url] [task_name] [command...]"
+        echo "  $0 monitor [task_name] [command...]  (uses LARK_HOOK environment variable)"
         echo "  $0 send [webhook_url] [message]"
         echo "  $0 send [message]  (uses LARK_HOOK environment variable)"
         echo ""
@@ -175,15 +197,15 @@ case "${1:-help}" in
         echo "  LARK_HOOK - Default webhook URL"
         echo ""
         echo "Examples:"
-        echo "  # Send simple message with webhook URL"
-        echo "  $0 send 'https://your-webhook-url' 'Task completed!'"
+        echo "  # Monitor with webhook URL"
+        echo "  $0 monitor 'https://your-webhook-url' 'My Backup Task' './backup.sh'"
         echo ""
-        echo "  # Send simple message using environment variable"
+        echo "  # Monitor using environment variable (recommended)"
         echo "  export LARK_HOOK='https://open.feishu.cn/open-apis/bot/v2/hook/your-webhook-url'"
-        echo "  $0 send 'Task completed successfully!'"
+        echo "  $0 monitor 'Data Processing' 'python process.py'"
         echo ""
-        echo "  # Monitor script execution"
-        echo "  $0 monitor 'My Backup Task' './backup.sh'"
+        echo "  # Send simple message"
+        echo "  $0 send 'Task completed successfully!'"
         ;;
     *)
         # Default behavior: treat first argument as webhook_url and second as message
