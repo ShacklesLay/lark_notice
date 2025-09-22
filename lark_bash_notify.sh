@@ -136,9 +136,17 @@ lark_send() {
     local webhook_url="$1"
     local message="$2"
     
+    # If only one argument is provided, treat it as message and use LARK_HOOK
+    if [[ $# -eq 1 && -n "$1" ]]; then
+        message="$1"
+        webhook_url=""
+    fi
+    
     if [[ -z "$message" ]]; then
         echo "Usage: lark_send [webhook_url] [message]"
+        echo "       lark_send [message]  (uses LARK_HOOK environment variable)"
         echo "Example: lark_send 'https://...' 'Hello from bash!'"
+        echo "         lark_send 'Hello from bash!'  (with LARK_HOOK set)"
         return 1
     fi
     
@@ -161,20 +169,21 @@ case "${1:-help}" in
         echo "Usage:"
         echo "  $0 monitor [webhook_url] [task_name] [command...]"
         echo "  $0 send [webhook_url] [message]"
+        echo "  $0 send [message]  (uses LARK_HOOK environment variable)"
         echo ""
         echo "Environment Variables:"
         echo "  LARK_HOOK - Default webhook URL"
         echo ""
         echo "Examples:"
-        echo "  # Monitor script execution"
-        echo "  $0 monitor 'My Backup Task' './backup.sh'"
+        echo "  # Send simple message with webhook URL"
+        echo "  $0 send 'https://your-webhook-url' 'Task completed!'"
         echo ""
-        echo "  # Send simple message"
+        echo "  # Send simple message using environment variable"
+        echo "  export LARK_HOOK='https://open.feishu.cn/open-apis/bot/v2/hook/your-webhook-url'"
         echo "  $0 send 'Task completed successfully!'"
         echo ""
-        echo "  # Using with environment variable"
-        echo "  export LARK_HOOK='https://open.feishu.cn/open-apis/bot/v2/hook/your-webhook-url'"
-        echo "  $0 monitor 'Data Processing' 'python data_process.py'"
+        echo "  # Monitor script execution"
+        echo "  $0 monitor 'My Backup Task' './backup.sh'"
         ;;
     *)
         # Default behavior: treat first argument as webhook_url and second as message
