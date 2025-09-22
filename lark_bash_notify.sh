@@ -93,11 +93,14 @@ lark_monitor() {
     local hostname=$(hostname)
     
     # Send start notification
-    local start_content="Your script has started 🎬
+    local start_content=$(cat <<EOF
+Your script has started 🎬
 Task: $task_name
 Machine name: $hostname
 Command: $script_command
-Starting date: $start_time"
+Starting date: $start_time
+EOF
+)
     
     send_lark_message "$webhook_url" "$start_content"
     
@@ -120,17 +123,21 @@ Starting date: $start_time"
     
     # Send completion or error notification
     if [[ $exit_code -eq 0 ]]; then
-        local success_content="Your script is complete 🎉
+        local success_content=$(cat <<EOF
+Your script is complete 🎉
 Task: $task_name
 Machine name: $hostname
 Command: $script_command
 Starting date: $start_time
 End date: $end_time
-Execution duration: ${duration_formatted}"
+Execution duration: ${duration_formatted}
+EOF
+)
         
         send_lark_message "$webhook_url" "$success_content"
     else
-        local error_content="Your script has crashed ☠️
+        local error_content=$(cat <<EOF
+Your script has crashed ☠️
 Task: $task_name
 Machine name: $hostname
 Command: $script_command
@@ -141,7 +148,9 @@ Failed execution duration: ${duration_formatted}
 Exit code: $exit_code
 
 Output:
-$(cat "$temp_output" | tail -20)"
+$(cat "$temp_output" | tail -20)
+EOF
+)
         
         send_lark_message "$webhook_url" "$error_content"
     fi
