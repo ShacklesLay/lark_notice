@@ -7,6 +7,22 @@
 # Date format
 DATE_FORMAT="%Y-%m-%d %H:%M:%S"
 
+# Function to escape JSON content
+escape_json() {
+    local content="$1"
+    # Replace backslashes first
+    content="${content//\\/\\\\}"
+    # Replace double quotes
+    content="${content//\"/\\\"}"
+    # Replace newlines with \n
+    content="${content//$'\n'/\\n}"
+    # Replace carriage returns
+    content="${content//$'\r'/\\r}"
+    # Replace tabs
+    content="${content//$'\t'/\\t}"
+    echo "$content"
+}
+
 # Function to send message to Lark
 send_lark_message() {
     local webhook_url="$1"
@@ -22,16 +38,15 @@ send_lark_message() {
         fi
     fi
     
-    # Get current timestamp
-    local timestamp=$(date +%s)
+    # Escape JSON content
+    local escaped_content=$(escape_json "$content")
     
     # Prepare JSON payload
     local json_payload=$(cat <<EOF
 {
-    "timestamp": $timestamp,
     "msg_type": "text",
     "content": {
-        "text": "$content"
+        "text": "$escaped_content"
     }
 }
 EOF
